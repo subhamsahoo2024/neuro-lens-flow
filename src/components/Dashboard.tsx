@@ -2,14 +2,22 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Activity, Camera, Plus, RefreshCw, Users, AlertTriangle, TrendingUp } from "lucide-react";
+import { Activity, Camera, Plus, RefreshCw, Users, AlertTriangle, TrendingUp, User, LogOut } from "lucide-react";
 import { PatientRegistration } from "./PatientRegistration";
 import { NewVisit } from "./NewVisit";
 import { CameraInterface } from "./CameraInterface";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "newPatient" | "newVisit" | "camera">("dashboard");
-  const [username] = useState("Dr. Smith"); // Mock username
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   if (activeView === "newPatient") {
     return <PatientRegistration onBack={() => setActiveView("dashboard")} />;
@@ -29,10 +37,31 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Hi {username}</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Hi Dr. {profile?.name?.split(' ')[0] || 'Doctor'}
+            </h1>
             <p className="text-muted-foreground">Welcome to NeuroLens</p>
+            <p className="text-sm text-muted-foreground">{profile?.hospital_name}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/profile')}
+              className="text-foreground hover:bg-accent"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-foreground hover:bg-accent"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
             <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
               <Activity className="w-3 h-3 mr-1" />
               System Online
