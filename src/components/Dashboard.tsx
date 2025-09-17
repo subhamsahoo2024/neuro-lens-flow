@@ -2,14 +2,53 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Activity, Camera, Plus, RefreshCw, Users, AlertTriangle, TrendingUp } from "lucide-react";
+import { Activity, Camera, Plus, RefreshCw, Users, AlertTriangle, TrendingUp, LogOut, Settings } from "lucide-react";
 import { PatientRegistration } from "./PatientRegistration";
 import { NewVisit } from "./NewVisit";
 import { CameraInterface } from "./CameraInterface";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "newPatient" | "newVisit" | "camera">("dashboard");
-  const [username] = useState("Dr. Smith"); // Mock username
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   if (activeView === "newPatient") {
     return <PatientRegistration onBack={() => setActiveView("dashboard")} />;
@@ -29,14 +68,42 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Hi {username}</h1>
-            <p className="text-muted-foreground">Welcome to NeuroLens</p>
+            <h1 className="text-3xl font-bold text-foreground">Hi {profile?.name || 'Doctor'}</h1>
+            <p className="text-muted-foreground">Welcome to NeuroLens - {profile?.hospital_name}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
               <Activity className="w-3 h-3 mr-1" />
               System Online
             </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {profile?.name ? getUserInitials(profile.name) : 'DR'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium">{profile?.name}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.email}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.hospital_name}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
