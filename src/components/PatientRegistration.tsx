@@ -16,6 +16,7 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
   const [formData, setFormData] = useState({
     name: "",
     dob: "",
+    age: "",
     gender: "",
     mrn: `MRN${Date.now()}`, // Auto-generated
     phone: "",
@@ -51,10 +52,20 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
   };
 
   const handleSave = () => {
-    if (!formData.name || !formData.dob) {
+    if (!formData.name || (!formData.dob && !formData.age)) {
       toast({
         title: "Validation Error",
-        description: "Name and Date of Birth are required fields.",
+        description: "Name and either Date of Birth or Age are required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate age range if provided
+    if (formData.age && (parseInt(formData.age) < 0 || parseInt(formData.age) > 150)) {
+      toast({
+        title: "Validation Error",
+        description: "Age must be between 0 and 150 years.",
         variant: "destructive"
       });
       return;
@@ -109,13 +120,36 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dob">Date of Birth *</Label>
+                    <Label htmlFor="dob">Date of Birth</Label>
                     <Input
                       id="dob"
                       type="date"
                       value={formData.dob}
-                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                      onChange={(e) => {
+                        const newFormData = { ...formData, dob: e.target.value };
+                        // Auto-update age when DOB changes
+                        if (e.target.value) {
+                          const calculatedAge = calculateAge(e.target.value);
+                          newFormData.age = calculatedAge.toString();
+                        }
+                        setFormData(newFormData);
+                      }}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age (years)</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      min="0"
+                      max="150"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      placeholder="Enter age"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Either Date of Birth or Age is required
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender</Label>
@@ -227,7 +261,10 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Age:</span>
-                  <span className="font-medium">{age > 0 ? `${age} years` : "Not set"}</span>
+                  <span className="font-medium">
+                    {formData.age ? `${formData.age} years` : 
+                     (age > 0 ? `${age} years (calculated)` : "Not set")}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">BMI:</span>
