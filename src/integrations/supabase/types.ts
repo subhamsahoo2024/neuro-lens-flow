@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      patients: {
+        Row: {
+          address: string | null
+          age: number | null
+          allergies: string | null
+          blood_group: string | null
+          bmi: number | null
+          created_at: string
+          dob: string | null
+          gender: string | null
+          height: number | null
+          id: string
+          mrn: string
+          name: string
+          notes: string | null
+          phone: string | null
+          physician: string | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          address?: string | null
+          age?: number | null
+          allergies?: string | null
+          blood_group?: string | null
+          bmi?: number | null
+          created_at?: string
+          dob?: string | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          mrn: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          physician?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          address?: string | null
+          age?: number | null
+          allergies?: string | null
+          blood_group?: string | null
+          bmi?: number | null
+          created_at?: string
+          dob?: string | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          mrn?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          physician?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -47,12 +110,98 @@ export type Database = {
         }
         Relationships: []
       }
+      visits: {
+        Row: {
+          age: number | null
+          created_at: string
+          diastolic: number
+          diseases: string | null
+          epwv_recommendations: string | null
+          epwv_result: number | null
+          epwv_risk_level: string | null
+          heart_rate: number | null
+          height: number | null
+          id: string
+          location: string | null
+          mean_bp: number | null
+          patient_id: string
+          reason: string
+          spo2: number | null
+          systolic: number
+          technician: string | null
+          temperature: number | null
+          updated_at: string
+          user_id: string
+          visit_date: string
+          weight: number | null
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          diastolic: number
+          diseases?: string | null
+          epwv_recommendations?: string | null
+          epwv_result?: number | null
+          epwv_risk_level?: string | null
+          heart_rate?: number | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          mean_bp?: number | null
+          patient_id: string
+          reason: string
+          spo2?: number | null
+          systolic: number
+          technician?: string | null
+          temperature?: number | null
+          updated_at?: string
+          user_id: string
+          visit_date?: string
+          weight?: number | null
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          diastolic?: number
+          diseases?: string | null
+          epwv_recommendations?: string | null
+          epwv_result?: number | null
+          epwv_risk_level?: string | null
+          heart_rate?: number | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          mean_bp?: number | null
+          patient_id?: string
+          reason?: string
+          spo2?: number | null
+          systolic?: number
+          technician?: string | null
+          temperature?: number | null
+          updated_at?: string
+          user_id?: string
+          visit_date?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visits_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_mean_bp: {
+        Args: { diastolic: number; systolic: number }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
