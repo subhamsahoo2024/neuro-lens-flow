@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { createPatient, calculateBMI } from "@/lib/database";
 
 interface PatientRegistrationProps {
   onBack: () => void;
@@ -41,7 +42,7 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
     return age;
   };
 
-  const calculateBMI = () => {
+  const getLocalBMI = () => {
     const height = parseFloat(formData.height);
     const weight = parseFloat(formData.weight);
     if (height && weight) {
@@ -51,7 +52,7 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
     return null;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || (!formData.dob && !formData.age)) {
       toast({
         title: "Validation Error",
@@ -71,18 +72,51 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
       return;
     }
 
-    toast({
-      title: "Patient Registered",
-      description: `${formData.name} has been successfully registered.`,
-      variant: "default"
-    });
-    
-    // In a real app, this would save to database
-    onBack();
+    try {
+      // Calculate BMI if height and weight are provided
+      const calculatedBMI = formData.height && formData.weight ? 
+        calculateBMI(parseFloat(formData.height), parseFloat(formData.weight)) : null;
+
+      // Prepare patient data
+      const patientData = {
+        name: formData.name,
+        dob: formData.dob || null,
+        age: formData.age ? parseInt(formData.age) : null,
+        gender: formData.gender || null,
+        mrn: formData.mrn,
+        phone: formData.phone || null,
+        address: formData.address || null,
+        height: formData.height ? parseFloat(formData.height) : null,
+        weight: formData.weight ? parseFloat(formData.weight) : null,
+        bmi: calculatedBMI,
+        blood_group: formData.bloodGroup || null,
+        physician: formData.physician || null,
+        allergies: formData.allergies || null,
+        notes: formData.notes || null
+      };
+
+      // Save to database
+      await createPatient(patientData);
+
+      toast({
+        title: "Patient Registered",
+        description: `${formData.name} has been successfully registered.`,
+        variant: "default"
+      });
+      
+      onBack();
+    } catch (error) {
+      console.error('Error saving patient:', error);
+      toast({
+        title: "Registration Failed",
+        description: "Failed to register patient. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const age = calculateAge(formData.dob);
-  const bmi = calculateBMI();
+  const bmi = getLocalBMI();
 
   return (
     <div className="min-h-screen bg-background p-6">

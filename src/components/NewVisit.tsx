@@ -6,15 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calculator, Heart, Activity } from "lucide-react";
+import { ArrowLeft, Calculator, Heart, Activity, User } from "lucide-react";
 import { EpwvCalculator } from "./EpwvCalculator";
+import { PatientSearch } from "./PatientSearch";
+import { Patient, createVisit, getDiseasesList, formatDiseases } from "@/lib/database";
+import { toast } from "@/hooks/use-toast";
 
 interface NewVisitProps {
   onBack: () => void;
 }
 
 export const NewVisit = ({ onBack }: NewVisitProps) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start with patient selection
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [showPatientRegistration, setShowPatientRegistration] = useState(false);
+  const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
   const [visitData, setVisitData] = useState({
     reason: "",
     technician: "",
@@ -26,12 +32,12 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
     height: "",
     weight: "",
     temperature: "",
-    spO2: "",
-    diabetes: false,
-    hypertension: false,
-    atrialFib: false,
-    smoking: false,
-    cholesterol: false
+    spO2: ""
+  });
+  const [epwvData, setEpwvData] = useState({
+    result: null as number | null,
+    riskLevel: "",
+    recommendations: ""
   });
 
   const getMeanBP = () => {
@@ -44,14 +50,83 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
   };
 
   const steps = [
+    { title: "Patient Selection", icon: User },
     { title: "Visit Information", icon: Activity },
     { title: "Vital Signs", icon: Heart },
     { title: "Medical History", icon: Activity },
     { title: "ePWV Analysis", icon: Calculator }
   ];
 
+  const handlePatientSelect = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setCurrentStep(1);
+  };
+
+  const handleNewPatient = () => {
+    setShowPatientRegistration(true);
+  };
+
+  const handleDiseaseChange = (disease: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDiseases(prev => [...prev, disease]);
+    } else {
+      setSelectedDiseases(prev => prev.filter(d => d !== disease));
+    }
+  };
+
+  const handleCompleteVisit = async () => {
+    if (!selectedPatient) return;
+
+    try {
+      const visitPayload = {
+        patient_id: selectedPatient.id,
+        reason: visitData.reason,
+        technician: visitData.technician || null,
+        location: visitData.location || null,
+        visit_date: new Date().toISOString(),
+        age: visitData.age ? parseInt(visitData.age) : null,
+        heart_rate: visitData.heartRate ? parseInt(visitData.heartRate) : null,
+        systolic: parseInt(visitData.systolic),
+        diastolic: parseInt(visitData.diastolic),
+        height: visitData.height ? parseFloat(visitData.height) : null,
+        weight: visitData.weight ? parseFloat(visitData.weight) : null,
+        temperature: visitData.temperature ? parseFloat(visitData.temperature) : null,
+        spo2: visitData.spO2 ? parseInt(visitData.spO2) : null,
+        diseases: formatDiseases(selectedDiseases),
+        epwv_result: epwvData.result,
+        epwv_risk_level: epwvData.riskLevel || null,
+        epwv_recommendations: epwvData.recommendations || null
+      };
+
+      await createVisit(visitPayload);
+
+      toast({
+        title: "Visit Completed",
+        description: `Visit for ${selectedPatient.name} has been saved successfully.`,
+        variant: "default"
+      });
+
+      onBack();
+    } catch (error) {
+      console.error('Error saving visit:', error);
+      toast({
+        title: "Visit Save Failed",
+        description: "Failed to save visit. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
+      case 0:
+        return (
+          <PatientSearch 
+            onPatientSelect={handlePatientSelect}
+            onNewPatient={handleNewPatient}
+          />
+        );
+
       case 1:
         return (
           <Card>
@@ -60,6 +135,12 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
               <CardDescription>Basic information about this visit</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {selectedPatient && (
+                <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                  <p className="text-sm font-medium">Selected Patient: {selectedPatient.name}</p>
+                  <p className="text-xs text-muted-foreground">MRN: {selectedPatient.mrn}</p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="reason">Reason for Visit</Label>
                 <Input
@@ -208,25 +289,29 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { key: "diabetes", label: "Diabetes" },
-                  { key: "hypertension", label: "Hypertension" },
-                  { key: "atrialFib", label: "Atrial Fibrillation" },
-                  { key: "smoking", label: "Smoking History" },
-                  { key: "cholesterol", label: "High Cholesterol" }
-                ].map((condition) => (
-                  <div key={condition.key} className="flex items-center space-x-2">
+                {getDiseasesList().map((disease) => (
+                  <div key={disease} className="flex items-center space-x-2">
                     <Checkbox
-                      id={condition.key}
-                      checked={visitData[condition.key as keyof typeof visitData] as boolean}
-                      onCheckedChange={(checked) =>
-                        setVisitData({ ...visitData, [condition.key]: checked })
-                      }
+                      id={disease}
+                      checked={selectedDiseases.includes(disease)}
+                      onCheckedChange={(checked) => handleDiseaseChange(disease, checked as boolean)}
                     />
-                    <Label htmlFor={condition.key}>{condition.label}</Label>
+                    <Label htmlFor={disease}>{disease}</Label>
                   </div>
                 ))}
               </div>
+              {selectedDiseases.length > 0 && (
+                <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Selected Conditions:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedDiseases.map((disease) => (
+                      <Badge key={disease} variant="secondary" className="text-xs">
+                        {disease}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         );
@@ -245,6 +330,8 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
 
   const canProceed = () => {
     switch (currentStep) {
+      case 0:
+        return selectedPatient !== null;
       case 1:
         return visitData.reason.trim() !== "";
       case 2:
@@ -311,12 +398,12 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
         <div className="flex justify-between">
           <Button
             variant="outline"
-            onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : onBack()}
+            onClick={() => currentStep > 0 ? setCurrentStep(currentStep - 1) : onBack()}
           >
-            {currentStep === 1 ? "Cancel" : "Previous"}
+            {currentStep === 0 ? "Cancel" : "Previous"}
           </Button>
           <Button
-            onClick={() => currentStep < 4 ? setCurrentStep(currentStep + 1) : onBack()}
+            onClick={() => currentStep < 4 ? setCurrentStep(currentStep + 1) : handleCompleteVisit()}
             disabled={!canProceed()}
             className="bg-primary hover:bg-primary/90"
           >
