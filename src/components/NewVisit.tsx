@@ -9,18 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calculator, Heart, Activity, User } from "lucide-react";
 import { EpwvCalculator } from "./EpwvCalculator";
 import { PatientSearch } from "./PatientSearch";
-import { PatientRegistration } from "./PatientRegistration";
 import { Patient, createVisit, getDiseasesList, formatDiseases } from "@/lib/database";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface NewVisitProps {
   onBack: () => void;
 }
 
 export const NewVisit = ({ onBack }: NewVisitProps) => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0); // Start with patient selection
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [showPatientRegistration, setShowPatientRegistration] = useState(false);
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
   const [visitData, setVisitData] = useState({
     reason: "",
@@ -64,17 +64,7 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
   };
 
   const handleNewPatient = () => {
-    setShowPatientRegistration(true);
-  };
-
-  const handlePatientCreated = (patient: Patient) => {
-    setSelectedPatient(patient);
-    setShowPatientRegistration(false);
-    setCurrentStep(1);
-  };
-
-  const handleBackFromRegistration = () => {
-    setShowPatientRegistration(false);
+    navigate("/new-patient");
   };
 
   const handleDiseaseChange = (disease: string, checked: boolean) => {
@@ -129,16 +119,6 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
   };
 
   const renderStepContent = () => {
-    // Show patient registration if requested
-    if (showPatientRegistration) {
-      return (
-        <PatientRegistration 
-          onBack={handleBackFromRegistration}
-          onPatientCreated={handlePatientCreated}
-        />
-      );
-    }
-
     switch (currentStep) {
       case 0:
         return (
