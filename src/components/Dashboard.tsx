@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Activity, Camera, Plus, RefreshCw, Users, AlertTriangle, TrendingUp, LogOut, Settings, Search, UserPlus } from "lucide-react";
+import { Activity, Camera, Plus, RefreshCw, Users, AlertTriangle, TrendingUp, LogOut, Settings, Search, UserPlus, ArrowLeft } from "lucide-react";
 import { PatientRegistration } from "./PatientRegistration";
 import { NewVisit } from "./NewVisit";
 import { CameraInterface } from "./CameraInterface";
@@ -158,7 +158,7 @@ export const Dashboard = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => setActiveView("dashboard")} className="p-2">
-              <RefreshCw className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
               <h1 className="text-2xl font-bold">Patient Directory</h1>
