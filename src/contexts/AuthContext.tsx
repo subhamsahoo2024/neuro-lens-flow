@@ -45,9 +45,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
+      // If no profile exists for authenticated user, sign them out
+      if (!data) {
+        console.warn('No profile found for authenticated user, signing out');
+        await supabase.auth.signOut();
+        return;
+      }
+      
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      // Sign out user if profile fetch fails
+      await supabase.auth.signOut();
     }
   };
 

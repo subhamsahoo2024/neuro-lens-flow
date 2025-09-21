@@ -7,13 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { createPatient, calculateBMI } from "@/lib/database";
+import { createPatient, calculateBMI, Patient } from "@/lib/database";
 
 interface PatientRegistrationProps {
   onBack: () => void;
+  onPatientCreated?: (patient: Patient) => void;
 }
 
-export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
+export const PatientRegistration = ({ onBack, onPatientCreated }: PatientRegistrationProps) => {
   const [formData, setFormData] = useState({
     name: "",
     dob: "",
@@ -96,7 +97,7 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
       };
 
       // Save to database
-      await createPatient(patientData);
+      const newPatient = await createPatient(patientData);
 
       toast({
         title: "Patient Registered",
@@ -104,7 +105,12 @@ export const PatientRegistration = ({ onBack }: PatientRegistrationProps) => {
         variant: "default"
       });
       
-      onBack();
+      // If callback provided, pass the new patient back (for visit flow)
+      if (onPatientCreated && newPatient) {
+        onPatientCreated(newPatient);
+      } else {
+        onBack();
+      }
     } catch (error) {
       console.error('Error saving patient:', error);
       toast({

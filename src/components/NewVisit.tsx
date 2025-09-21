@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calculator, Heart, Activity, User } from "lucide-react";
 import { EpwvCalculator } from "./EpwvCalculator";
 import { PatientSearch } from "./PatientSearch";
+import { PatientRegistration } from "./PatientRegistration";
 import { Patient, createVisit, getDiseasesList, formatDiseases } from "@/lib/database";
 import { toast } from "@/hooks/use-toast";
 
@@ -66,6 +67,16 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
     setShowPatientRegistration(true);
   };
 
+  const handlePatientCreated = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowPatientRegistration(false);
+    setCurrentStep(1);
+  };
+
+  const handleBackFromRegistration = () => {
+    setShowPatientRegistration(false);
+  };
+
   const handleDiseaseChange = (disease: string, checked: boolean) => {
     if (checked) {
       setSelectedDiseases(prev => [...prev, disease]);
@@ -118,6 +129,16 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
   };
 
   const renderStepContent = () => {
+    // Show patient registration if requested
+    if (showPatientRegistration) {
+      return (
+        <PatientRegistration 
+          onBack={handleBackFromRegistration}
+          onPatientCreated={handlePatientCreated}
+        />
+      );
+    }
+
     switch (currentStep) {
       case 0:
         return (
