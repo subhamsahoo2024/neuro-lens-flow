@@ -382,13 +382,12 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
         {/* Progress Steps */}
         <div className="flex items-center justify-between mb-8">
           {steps.map((step, index) => {
-            const stepNumber = index + 1;
-            const isActive = currentStep === stepNumber;
-            const isCompleted = currentStep > stepNumber;
+            const isActive = currentStep === index;
+            const isCompleted = currentStep > index;
             const Icon = step.icon;
 
             return (
-              <div key={stepNumber} className="flex items-center">
+              <div key={index} className="flex items-center">
                 <div className="flex flex-col items-center">
                   <div className={`
                     w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors
