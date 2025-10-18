@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Calendar, Phone, MapPin, Activity, TrendingUp } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Activity, TrendingUp, Edit } from "lucide-react";
 import { Patient, Visit, getPatientById, getVisitsByPatient, parseDiseases } from "@/lib/database";
 import { toast } from "@/hooks/use-toast";
+import { PatientDetailsEdit } from "./PatientDetailsEdit";
 
 interface PatientDetailsProps {
   patientId: string;
@@ -16,6 +17,7 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchPatientData = async () => {
@@ -114,13 +116,29 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Patient Information */}
           <div className="lg:col-span-1 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Patient Information
-                </CardTitle>
-              </CardHeader>
+            {isEditing ? (
+              <PatientDetailsEdit
+                patient={patient}
+                onCancel={() => setIsEditing(false)}
+                onSave={(updatedPatient) => {
+                  setPatient(updatedPatient);
+                  setIsEditing(false);
+                }}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      Patient Information
+                    </CardTitle>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  </div>
+                </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
@@ -175,6 +193,7 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Physical Measurements */}
             <Card>
@@ -290,6 +309,18 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
                                 <p className="font-medium">{visit.heart_rate} bpm</p>
                               </div>
                             )}
+                            {visit.temperature && (
+                              <div className="text-center p-2 bg-muted/30 rounded">
+                                <p className="text-xs text-muted-foreground">Temp</p>
+                                <p className="font-medium">{visit.temperature}°C</p>
+                              </div>
+                            )}
+                            {visit.spo2 && (
+                              <div className="text-center p-2 bg-muted/30 rounded">
+                                <p className="text-xs text-muted-foreground">SpO2</p>
+                                <p className="font-medium">{visit.spo2}%</p>
+                              </div>
+                            )}
                             {visit.mean_bp && (
                               <div className="text-center p-2 bg-muted/30 rounded">
                                 <p className="text-xs text-muted-foreground">Mean BP</p>
@@ -300,7 +331,7 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
                               <div className="text-center p-2 bg-primary/10 rounded">
                                 <p className="text-xs text-muted-foreground">ePWV</p>
                                 <p className="font-medium text-primary">
-                                  {visit.epwv_result} m/s
+                                  {visit.epwv_result.toFixed(2)} m/s
                                 </p>
                               </div>
                             )}
@@ -331,7 +362,7 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
                               <div className="flex items-center gap-2">
                                 <TrendingUp className="w-4 h-4" />
                                 <span className="text-sm font-medium">
-                                  Risk Level: 
+                                  ePWV Risk Level: 
                                 </span>
                                 <Badge 
                                   variant={
@@ -344,11 +375,6 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
                                   {visit.epwv_risk_level}
                                 </Badge>
                               </div>
-                              {visit.epwv_recommendations && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {visit.epwv_recommendations}
-                                </p>
-                              )}
                             </div>
                           )}
                         </CardContent>

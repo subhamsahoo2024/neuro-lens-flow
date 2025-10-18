@@ -116,11 +116,9 @@ export type Database = {
           created_at: string
           diastolic: number
           diseases: string | null
-          epwv_recommendations: string | null
           epwv_result: number | null
           epwv_risk_level: string | null
           heart_rate: number | null
-          height: number | null
           id: string
           location: string | null
           mean_bp: number | null
@@ -133,18 +131,15 @@ export type Database = {
           updated_at: string
           user_id: string
           visit_date: string
-          weight: number | null
         }
         Insert: {
           age?: number | null
           created_at?: string
           diastolic: number
           diseases?: string | null
-          epwv_recommendations?: string | null
           epwv_result?: number | null
           epwv_risk_level?: string | null
           heart_rate?: number | null
-          height?: number | null
           id?: string
           location?: string | null
           mean_bp?: number | null
@@ -157,18 +152,15 @@ export type Database = {
           updated_at?: string
           user_id: string
           visit_date?: string
-          weight?: number | null
         }
         Update: {
           age?: number | null
           created_at?: string
           diastolic?: number
           diseases?: string | null
-          epwv_recommendations?: string | null
           epwv_result?: number | null
           epwv_risk_level?: string | null
           heart_rate?: number | null
-          height?: number | null
           id?: string
           location?: string | null
           mean_bp?: number | null
@@ -181,7 +173,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           visit_date?: string
-          weight?: number | null
         }
         Relationships: [
           {

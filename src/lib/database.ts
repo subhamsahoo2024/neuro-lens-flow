@@ -35,14 +35,11 @@ export interface Visit {
   systolic: number;
   diastolic: number;
   mean_bp?: number;
-  height?: number;
-  weight?: number;
   temperature?: number;
   spo2?: number;
   diseases?: string;
   epwv_result?: number;
   epwv_risk_level?: string;
-  epwv_recommendations?: string;
   created_at: string;
   updated_at: string;
 }
