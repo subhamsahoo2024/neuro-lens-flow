@@ -30,25 +30,16 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
     heartRate: "",
     systolic: "",
     diastolic: "",
+    height: "",
+    weight: "",
     temperature: "",
     spO2: ""
   });
-  
-  const [visitHeight, setVisitHeight] = useState("");
-  const [visitWeight, setVisitWeight] = useState("");
   const [epwvData, setEpwvData] = useState({
     result: null as number | null,
     riskLevel: "",
     recommendations: ""
   });
-  
-  const handleEpwvResultCalculated = (epwv: number, riskLevel: string) => {
-    setEpwvData(prev => ({
-      ...prev,
-      result: epwv,
-      riskLevel
-    }));
-  };
 
   const getMeanBP = () => {
     const sys = parseFloat(visitData.systolic);
@@ -98,40 +89,17 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
         heart_rate: visitData.heartRate ? parseInt(visitData.heartRate) : null,
         systolic: parseInt(visitData.systolic),
         diastolic: parseInt(visitData.diastolic),
+        height: visitData.height ? parseFloat(visitData.height) : null,
+        weight: visitData.weight ? parseFloat(visitData.weight) : null,
         temperature: visitData.temperature ? parseFloat(visitData.temperature) : null,
         spo2: visitData.spO2 ? parseInt(visitData.spO2) : null,
         diseases: formatDiseases(selectedDiseases),
         epwv_result: epwvData.result,
-        epwv_risk_level: epwvData.riskLevel || null
+        epwv_risk_level: epwvData.riskLevel || null,
+        epwv_recommendations: epwvData.recommendations || null
       };
 
       await createVisit(visitPayload);
-
-      // Update patient height/weight if they've changed
-      const updates: Partial<Patient> = {};
-      const heightValue = visitHeight ? parseFloat(visitHeight) : null;
-      const weightValue = visitWeight ? parseFloat(visitWeight) : null;
-      
-      if (heightValue && heightValue !== selectedPatient.height) {
-        updates.height = heightValue;
-      }
-      
-      if (weightValue && weightValue !== selectedPatient.weight) {
-        updates.weight = weightValue;
-      }
-      
-      // Recalculate BMI if either height or weight changed
-      if (Object.keys(updates).length > 0) {
-        const { calculateBMI, updatePatient } = await import("@/lib/database");
-        const finalHeight = updates.height || selectedPatient.height;
-        const finalWeight = updates.weight || selectedPatient.weight;
-        
-        if (finalHeight && finalWeight) {
-          updates.bmi = calculateBMI(finalHeight, finalWeight);
-        }
-        
-        await updatePatient(selectedPatient.id, updates);
-      }
 
       toast({
         title: "Visit Completed",
@@ -265,30 +233,20 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
                   <Input
                     id="height"
                     type="number"
-                    value={visitHeight}
-                    onChange={(e) => setVisitHeight(e.target.value)}
-                    placeholder={selectedPatient?.height?.toString() || "Enter height"}
+                    value={visitData.height}
+                    onChange={(e) => setVisitData({ ...visitData, height: e.target.value })}
+                    placeholder="Enter height"
                   />
-                  {selectedPatient?.height && (
-                    <p className="text-xs text-muted-foreground">
-                      Current: {selectedPatient.height} cm
-                    </p>
-                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight (kg)</Label>
                   <Input
                     id="weight"
                     type="number"
-                    value={visitWeight}
-                    onChange={(e) => setVisitWeight(e.target.value)}
-                    placeholder={selectedPatient?.weight?.toString() || "Enter weight"}
+                    value={visitData.weight}
+                    onChange={(e) => setVisitData({ ...visitData, weight: e.target.value })}
+                    placeholder="Enter weight"
                   />
-                  {selectedPatient?.weight && (
-                    <p className="text-xs text-muted-foreground">
-                      Current: {selectedPatient.weight} kg
-                    </p>
-                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="temperature">Temperature (°C)</Label>
@@ -363,11 +321,7 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
         const age = parseFloat(visitData.age);
         const mbp = parseFloat(getMeanBP() || "0");
         return (
-          <EpwvCalculator 
-            age={age} 
-            mbp={mbp}
-            onResultCalculated={handleEpwvResultCalculated}
-          />
+          <EpwvCalculator age={age} mbp={mbp} />
         );
 
       default:

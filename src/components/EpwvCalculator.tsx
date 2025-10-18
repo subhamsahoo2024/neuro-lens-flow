@@ -7,7 +7,6 @@ import { Calculator, TrendingUp, AlertTriangle, CheckCircle, Info } from "lucide
 interface EpwvCalculatorProps {
   age: number;
   mbp: number;
-  onResultCalculated?: (epwv: number, riskLevel: string) => void;
 }
 
 interface EpwvResult {
@@ -18,7 +17,7 @@ interface EpwvResult {
   recommendations: string[];
 }
 
-export const EpwvCalculator = ({ age, mbp, onResultCalculated }: EpwvCalculatorProps) => {
+export const EpwvCalculator = ({ age, mbp }: EpwvCalculatorProps) => {
   const [result, setResult] = useState<EpwvResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -107,12 +106,6 @@ export const EpwvCalculator = ({ age, mbp, onResultCalculated }: EpwvCalculatorP
           interpretation,
           recommendations
         });
-        
-        // Notify parent component with the calculated values
-        if (onResultCalculated) {
-          onResultCalculated(epwv, riskCategory);
-        }
-        
         setIsCalculating(false);
       }, 1500);
     }
