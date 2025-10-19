@@ -75,6 +75,14 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
     }
   };
 
+  const handleEpwvResultCalculated = (epwv: number, riskLevel: string) => {
+    setEpwvData({
+      result: epwv,
+      riskLevel: riskLevel,
+      recommendations: ""
+    });
+  };
+
   const handleCompleteVisit = async () => {
     if (!selectedPatient) return;
 
@@ -321,7 +329,11 @@ export const NewVisit = ({ onBack }: NewVisitProps) => {
         const age = parseFloat(visitData.age);
         const mbp = parseFloat(getMeanBP() || "0");
         return (
-          <EpwvCalculator age={age} mbp={mbp} />
+          <EpwvCalculator 
+            age={age} 
+            mbp={mbp} 
+            onResultCalculated={handleEpwvResultCalculated}
+          />
         );
 
       default:
