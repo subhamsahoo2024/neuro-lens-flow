@@ -115,7 +115,7 @@ export const EpwvCalculator = ({ age, mbp, onResultCalculated }: EpwvCalculatorP
         }
       }, 1500);
     }
-  }, [age, mbp, onResultCalculated]);
+  }, [age, mbp]);
 
   if (!age || !mbp) {
     return (
