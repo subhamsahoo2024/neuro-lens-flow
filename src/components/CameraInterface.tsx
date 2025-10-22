@@ -4,17 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Camera, Eye, Zap, ZoomIn, RotateCcw, CheckCircle, AlertTriangle } from "lucide-react";
+import { captureRetinalImage, simulateCaptureForWeb, isNativePlatform } from "@/lib/camera";
+import { useToast } from "@/hooks/use-toast";
 
 interface CameraInterfaceProps {
   onBack: () => void;
 }
 
 export const CameraInterface = ({ onBack }: CameraInterfaceProps) => {
+  const { toast } = useToast();
   const [selectedEye, setSelectedEye] = useState<"left" | "right" | null>(null);
   const [captureMode, setCaptureMode] = useState<"macula" | "disc">("macula");
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [capturedFileName, setCapturedFileName] = useState<string | null>(null);
   const [qualityCheck, setQualityCheck] = useState<{
     blur: "pass" | "fail";
     exposure: "pass" | "fail";
@@ -22,14 +26,30 @@ export const CameraInterface = ({ onBack }: CameraInterfaceProps) => {
     artifacts: "pass" | "fail";
   } | null>(null);
 
-  const handleCapture = () => {
+  const handleCapture = async () => {
+    if (!selectedEye) return;
+
     setIsCapturing(true);
     
-    // Simulate camera capture
-    setTimeout(() => {
-      setCapturedImage("/placeholder.svg"); // In real app, this would be the actual image
+    try {
+      // Use native camera on mobile, simulate on web
+      const captureFunction = isNativePlatform() ? captureRetinalImage : simulateCaptureForWeb;
       
-      // Simulate quality check
+      const result = await captureFunction({
+        eye: selectedEye,
+        mode: captureMode,
+        flash: flashEnabled
+      });
+      
+      setCapturedImage(result.uri);
+      setCapturedFileName(result.fileName);
+      
+      toast({
+        title: "Image Captured",
+        description: "Analyzing image quality...",
+      });
+      
+      // Simulate quality check (in production, this would be AI-powered)
       setTimeout(() => {
         setQualityCheck({
           blur: Math.random() > 0.3 ? "pass" : "fail",
@@ -38,13 +58,35 @@ export const CameraInterface = ({ onBack }: CameraInterfaceProps) => {
           artifacts: Math.random() > 0.1 ? "pass" : "fail"
         });
         setIsCapturing(false);
-      }, 1000);
-    }, 500);
+      }, 1500);
+    } catch (error) {
+      console.error("Capture failed:", error);
+      toast({
+        title: "Capture Failed",
+        description: error instanceof Error ? error.message : "Failed to capture image",
+        variant: "destructive",
+      });
+      setIsCapturing(false);
+    }
   };
 
   const handleRetake = () => {
     setCapturedImage(null);
+    setCapturedFileName(null);
     setQualityCheck(null);
+  };
+
+  const handleAccept = () => {
+    if (!isQualityGood || !capturedFileName) return;
+    
+    toast({
+      title: "Image Accepted",
+      description: `${selectedEye} eye image saved successfully`,
+    });
+    
+    // In production, this would save to database or proceed to next step
+    // For now, just reset
+    handleRetake();
   };
 
   const isQualityGood = qualityCheck && Object.values(qualityCheck).every(check => check === "pass");
@@ -213,6 +255,7 @@ export const CameraInterface = ({ onBack }: CameraInterfaceProps) => {
                           Retake
                         </Button>
                         <Button 
+                          onClick={handleAccept}
                           disabled={!isQualityGood}
                           className="bg-success hover:bg-success/90 text-success-foreground"
                         >
