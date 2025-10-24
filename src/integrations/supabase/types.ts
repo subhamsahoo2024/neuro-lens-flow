@@ -113,6 +113,9 @@ export type Database = {
       visits: {
         Row: {
           age: number | null
+          ai_analysis_date: string | null
+          ai_model_version: string | null
+          ai_recommendations: string | null
           created_at: string
           diastolic: number
           diseases: string | null
@@ -122,11 +125,17 @@ export type Database = {
           heart_rate: number | null
           height: number | null
           id: string
+          image_quality_score: number | null
           location: string | null
           mean_bp: number | null
           patient_id: string
           reason: string
+          retinal_image_path: string | null
+          retinal_image_source: string | null
+          risk_factors: Json | null
           spo2: number | null
+          stroke_risk_level: string | null
+          stroke_risk_percentage: number | null
           systolic: number
           technician: string | null
           temperature: number | null
@@ -137,6 +146,9 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          ai_analysis_date?: string | null
+          ai_model_version?: string | null
+          ai_recommendations?: string | null
           created_at?: string
           diastolic: number
           diseases?: string | null
@@ -146,11 +158,17 @@ export type Database = {
           heart_rate?: number | null
           height?: number | null
           id?: string
+          image_quality_score?: number | null
           location?: string | null
           mean_bp?: number | null
           patient_id: string
           reason: string
+          retinal_image_path?: string | null
+          retinal_image_source?: string | null
+          risk_factors?: Json | null
           spo2?: number | null
+          stroke_risk_level?: string | null
+          stroke_risk_percentage?: number | null
           systolic: number
           technician?: string | null
           temperature?: number | null
@@ -161,6 +179,9 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          ai_analysis_date?: string | null
+          ai_model_version?: string | null
+          ai_recommendations?: string | null
           created_at?: string
           diastolic?: number
           diseases?: string | null
@@ -170,11 +191,17 @@ export type Database = {
           heart_rate?: number | null
           height?: number | null
           id?: string
+          image_quality_score?: number | null
           location?: string | null
           mean_bp?: number | null
           patient_id?: string
           reason?: string
+          retinal_image_path?: string | null
+          retinal_image_source?: string | null
+          risk_factors?: Json | null
           spo2?: number | null
+          stroke_risk_level?: string | null
+          stroke_risk_percentage?: number | null
           systolic?: number
           technician?: string | null
           temperature?: number | null
