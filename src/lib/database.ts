@@ -43,6 +43,15 @@ export interface Visit {
   epwv_result?: number;
   epwv_risk_level?: string;
   epwv_recommendations?: string;
+  retinal_image_path?: string;
+  retinal_image_source?: 'camera' | 'gallery' | 'upload';
+  stroke_risk_percentage?: number;
+  stroke_risk_level?: string;
+  risk_factors?: any;
+  ai_recommendations?: string;
+  ai_analysis_date?: string;
+  image_quality_score?: number;
+  ai_model_version?: string;
   created_at: string;
   updated_at: string;
 }
@@ -160,7 +169,7 @@ export const getVisitsByPatient = async (patientId: string) => {
     .order('visit_date', { ascending: false });
 
   if (error) throw error;
-  return data;
+  return data as Visit[];
 };
 
 export const updateVisit = async (id: string, updates: Partial<Visit>) => {

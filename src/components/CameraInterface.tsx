@@ -8,10 +8,14 @@ import { ArrowLeft, Camera, Eye, Zap, ZoomIn, RotateCcw, CheckCircle, AlertTrian
 import { captureRetinalImage, simulateCaptureForWeb, isNativePlatform, pickImageFromGallery, uploadImageFromFile, validateRetinalImage } from "@/lib/camera";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Patient, createVisit } from "@/lib/database";
+import { PatientSearch } from "./PatientSearch";
+import { useNavigate } from "react-router-dom";
 
 interface CameraInterfaceProps {
   onBack: () => void;
   onAnalysisComplete?: (results: StrokeRiskAnalysis) => void;
+  preselectedPatient?: Patient;
 }
 
 interface StrokeRiskAnalysis {
@@ -25,8 +29,10 @@ interface StrokeRiskAnalysis {
   confidence: number;
 }
 
-export const CameraInterface = ({ onBack, onAnalysisComplete }: CameraInterfaceProps) => {
+export const CameraInterface = ({ onBack, onAnalysisComplete, preselectedPatient }: CameraInterfaceProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(preselectedPatient || null);
   const [imageSource, setImageSource] = useState<'camera' | 'upload'>('camera');
   const [isDragging, setIsDragging] = useState(false);
   const [selectedEye, setSelectedEye] = useState<"left" | "right" | null>(null);
@@ -42,6 +48,7 @@ export const CameraInterface = ({ onBack, onAnalysisComplete }: CameraInterfaceP
     artifacts: "pass" | "fail";
   } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [strokeRiskResult, setStrokeRiskResult] = useState<{
     percentage: number;
     level: string;
@@ -296,15 +303,66 @@ export const CameraInterface = ({ onBack, onAnalysisComplete }: CameraInterfaceP
     setStrokeRiskResult(null);
   };
 
-  const handleAccept = () => {
-    if (!strokeRiskResult || !capturedFileName) return;
+  const handleAccept = async () => {
+    if (!strokeRiskResult || !capturedFileName || !selectedPatient) {
+      toast({
+        title: "Cannot Save",
+        description: "Please select a patient before saving",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    toast({
-      title: "Analysis Saved",
-      description: `${selectedEye} eye analysis saved successfully`,
-    });
+    setIsSaving(true);
     
-    handleRetake();
+    try {
+      await createVisit({
+        patient_id: selectedPatient.id,
+        reason: "Retinal AI Stroke Risk Analysis",
+        visit_date: new Date().toISOString(),
+        systolic: 0,
+        diastolic: 0,
+        retinal_image_path: capturedFileName,
+        retinal_image_source: imageSource === 'camera' ? 'camera' : 'upload',
+        stroke_risk_percentage: strokeRiskResult.percentage,
+        stroke_risk_level: strokeRiskResult.level,
+        risk_factors: strokeRiskResult.factors,
+        ai_recommendations: strokeRiskResult.recommendations.join('\n'),
+        image_quality_score: strokeRiskResult.imageQualityScore,
+        ai_analysis_date: new Date().toISOString(),
+        ai_model_version: 'gemini-2.5-pro'
+      });
+      
+      toast({
+        title: "Analysis Saved",
+        description: `Stroke risk analysis saved for ${selectedPatient.name}`,
+      });
+      
+      handleRetake();
+      setSelectedPatient(null);
+      
+      if (onAnalysisComplete) {
+        onAnalysisComplete({
+          imagePath: capturedFileName,
+          imageSource: imageSource === 'camera' ? 'camera' : 'upload',
+          strokeRiskPercentage: strokeRiskResult.percentage,
+          strokeRiskLevel: strokeRiskResult.level,
+          riskFactors: strokeRiskResult.factors,
+          aiRecommendations: strokeRiskResult.recommendations.join('\n'),
+          imageQualityScore: strokeRiskResult.imageQualityScore,
+          confidence: strokeRiskResult.confidence
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save analysis:", error);
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save analysis",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const isQualityGood = qualityCheck && Object.values(qualityCheck).every(check => check === "pass");
@@ -334,6 +392,43 @@ export const CameraInterface = ({ onBack, onAnalysisComplete }: CameraInterfaceP
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Patient Selection */}
+          <div className="lg:col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Patient Selection</CardTitle>
+                <CardDescription>
+                  Select the patient for this retinal analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!selectedPatient ? (
+                  <PatientSearch 
+                    onPatientSelect={setSelectedPatient}
+                    onNewPatient={() => navigate("/new-patient")}
+                    compact={true}
+                  />
+                ) : (
+                  <div className="p-3 bg-accent/10 border rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{selectedPatient.name}</p>
+                        <p className="text-sm text-muted-foreground">MRN: {selectedPatient.mrn}</p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedPatient(null)}
+                      >
+                        Change Patient
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Camera Controls */}
           <div className="space-y-4">
             <Card>
@@ -554,10 +649,11 @@ export const CameraInterface = ({ onBack, onAnalysisComplete }: CameraInterfaceP
                         ) : (
                           <Button 
                             onClick={handleAccept}
+                            disabled={isSaving}
                             className="bg-success hover:bg-success/90"
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
-                            Save Analysis
+                            {isSaving ? "Saving..." : "Save Analysis"}
                           </Button>
                         )}
                       </div>

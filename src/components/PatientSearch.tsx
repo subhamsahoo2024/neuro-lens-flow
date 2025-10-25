@@ -10,9 +10,10 @@ import { toast } from "@/hooks/use-toast";
 interface PatientSearchProps {
   onPatientSelect: (patient: Patient) => void;
   onNewPatient: () => void;
+  compact?: boolean;
 }
 
-export const PatientSearch = ({ onPatientSelect, onNewPatient }: PatientSearchProps) => {
+export const PatientSearch = ({ onPatientSelect, onNewPatient, compact }: PatientSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,6 +57,52 @@ export const PatientSearch = ({ onPatientSelect, onNewPatient }: PatientSearchPr
     }
     return null;
   };
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, MRN, or phone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {loading && (
+          <div className="text-center py-2 text-muted-foreground text-sm">
+            Searching...
+          </div>
+        )}
+        
+        {searchTerm.length >= 2 && patients.length > 0 && (
+          <div className="max-h-48 overflow-y-auto space-y-2 border rounded-lg p-2">
+            {patients.map(patient => (
+              <Button
+                key={patient.id}
+                variant="ghost"
+                className="w-full justify-start text-left h-auto py-2"
+                onClick={() => onPatientSelect(patient)}
+              >
+                <div className="flex-1">
+                  <p className="font-medium">{patient.name}</p>
+                  <p className="text-xs text-muted-foreground">MRN: {patient.mrn}</p>
+                </div>
+              </Button>
+            ))}
+          </div>
+        )}
+        
+        {searchTerm.length >= 2 && patients.length === 0 && !loading && (
+          <p className="text-sm text-muted-foreground text-center py-2">
+            No patients found. <Button variant="link" onClick={onNewPatient} className="p-0 h-auto">Create new patient</Button>
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Card>

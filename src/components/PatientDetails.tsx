@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Calendar, Phone, MapPin, Activity, TrendingUp, Edit } from "lucide-react";
+import { ArrowLeft, User, Calendar, Phone, MapPin, Activity, TrendingUp, Edit, Camera } from "lucide-react";
 import { Patient, Visit, getPatientById, getVisitsByPatient, parseDiseases } from "@/lib/database";
 import { toast } from "@/hooks/use-toast";
 import { PatientDetailsEdit } from "./PatientDetailsEdit";
@@ -11,9 +11,10 @@ import { PatientDetailsEdit } from "./PatientDetailsEdit";
 interface PatientDetailsProps {
   patientId: string;
   onBack: () => void;
+  onNavigateToCamera?: (patient: Patient) => void;
 }
 
-export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
+export const PatientDetails = ({ patientId, onBack, onNavigateToCamera }: PatientDetailsProps) => {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,10 +108,27 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
           <Button variant="ghost" onClick={onBack} className="p-2">
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold">{patient.name}</h1>
             <p className="text-muted-foreground">Patient Details & Visit History</p>
           </div>
+          {!isEditing && (
+            <>
+              {onNavigateToCamera && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onNavigateToCamera(patient)}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Retinal Analysis
+                </Button>
+              )}
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -386,6 +404,108 @@ export const PatientDetails = ({ patientId, onBack }: PatientDetailsProps) => {
                               <p className="text-xs text-muted-foreground">ePWV Risk: No Data</p>
                             </div>
                           )}
+
+                          {/* AI Stroke Risk Analysis Section */}
+                          {visit.stroke_risk_percentage !== null && visit.stroke_risk_percentage !== undefined ? (
+                            <div className="mt-3 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Activity className="w-4 h-4 text-purple-600" />
+                                  <span className="text-sm font-semibold text-purple-600">
+                                    AI Stroke Risk Analysis
+                                  </span>
+                                </div>
+                                {visit.image_quality_score && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Quality: {visit.image_quality_score}%
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              {/* Risk Percentage and Level */}
+                              <div className="flex items-center gap-4 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-3xl font-bold text-purple-600">
+                                    {visit.stroke_risk_percentage}%
+                                  </div>
+                                  <Badge 
+                                    variant={
+                                      visit.stroke_risk_level === "Critical" || visit.stroke_risk_level === "High" ? "destructive" :
+                                      visit.stroke_risk_level === "Moderate" ? "default" :
+                                      "secondary"
+                                    }
+                                    className={
+                                      visit.stroke_risk_level === "Moderate" ? "bg-orange-500 text-white" :
+                                      visit.stroke_risk_level === "Low" ? "bg-green-500 text-white" : ""
+                                    }
+                                  >
+                                    {visit.stroke_risk_level} Risk
+                                  </Badge>
+                                </div>
+                                {visit.retinal_image_source && (
+                                  <Badge variant="outline" className="text-xs capitalize">
+                                    {visit.retinal_image_source === 'camera' ? '📷 Camera' : '📁 Upload'}
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              {/* Risk Factors (Expandable) */}
+                              {visit.risk_factors && (
+                                <details className="mt-2 group">
+                                  <summary className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+                                    <span>View Risk Factors & Findings</span>
+                                    <span className="group-open:rotate-180 transition-transform">▼</span>
+                                  </summary>
+                                  <div className="mt-2 p-2 bg-background/50 rounded text-xs space-y-1">
+                                    {typeof visit.risk_factors === 'object' && Object.entries(visit.risk_factors).map(([key, value]) => {
+                                      if (key === 'findings' && Array.isArray(value)) {
+                                        return (
+                                          <div key={key}>
+                                            <p className="font-medium mb-1">Clinical Findings:</p>
+                                            <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                              {value.map((finding: string, idx: number) => (
+                                                <li key={idx}>{finding}</li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        );
+                                      } else if (typeof value === 'boolean' && value) {
+                                        return (
+                                          <div key={key} className="flex items-center gap-2">
+                                            <span className="text-destructive">⚠️</span>
+                                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    })}
+                                  </div>
+                                </details>
+                              )}
+                              
+                              {/* AI Recommendations */}
+                              {visit.ai_recommendations && (
+                                <div className="mt-2 p-2 bg-purple-500/5 rounded">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                                    AI Recommendations:
+                                  </p>
+                                  <p className="text-xs text-muted-foreground whitespace-pre-line">
+                                    {visit.ai_recommendations}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Metadata */}
+                              {visit.ai_analysis_date && (
+                                <div className="mt-2 pt-2 border-t border-purple-500/20">
+                                  <p className="text-xs text-muted-foreground">
+                                    Analyzed: {formatDate(visit.ai_analysis_date)} 
+                                    {visit.ai_model_version && ` • Model: ${visit.ai_model_version}`}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
                         </CardContent>
                       </Card>
                     ))}

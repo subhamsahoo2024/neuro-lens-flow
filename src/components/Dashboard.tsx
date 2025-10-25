@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export const Dashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "newPatient" | "newVisit" | "camera" | "patientDetails" | "patientList">("dashboard");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [cameraPatient, setCameraPatient] = useState<Patient | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -137,7 +138,15 @@ export const Dashboard = () => {
   }
 
   if (activeView === "camera") {
-    return <CameraInterface onBack={() => setActiveView("dashboard")} />;
+    return (
+      <CameraInterface 
+        onBack={() => {
+          setActiveView("dashboard");
+          setCameraPatient(null);
+        }} 
+        preselectedPatient={cameraPatient || undefined}
+      />
+    );
   }
 
   if (activeView === "patientDetails" && selectedPatientId) {
@@ -147,7 +156,11 @@ export const Dashboard = () => {
         onBack={() => {
           setActiveView("dashboard");
           setSelectedPatientId(null);
-        }} 
+        }}
+        onNavigateToCamera={(patient) => {
+          setCameraPatient(patient);
+          setActiveView("camera");
+        }}
       />
     );
   }
